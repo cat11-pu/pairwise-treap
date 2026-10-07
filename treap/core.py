@@ -58,7 +58,7 @@ class Node:
 
 def _update(node):
     """重算子树里的元素个数。"""
-    node.size = 1 + _size(node.left) + _size(node.right)
+    node.size = node.count + _size(node.left) + _size(node.right)
 
 
 def _rotate_right(node):
@@ -66,8 +66,8 @@ def _rotate_right(node):
     top = node.left
     node.left = top.right
     top.right = node
-    _update(top)
     _update(node)
+    _update(top)
     return top
 
 
@@ -91,7 +91,7 @@ def _insert(node, key, priority):
         return node
     if key < node.key:
         node.left = _insert(node.left, key, priority)
-        if node.left.priority > node.priority:
+        if node.left.priority < node.priority:
             return _rotate_right(node)
     else:
         node.right = _insert(node.right, key, priority)
@@ -111,7 +111,7 @@ def _merge(left, right):
     if right is None:
         return left
     if left.priority <= right.priority:
-        left.left = _merge(left.left, right)
+        left.right = _merge(left.right, right)
         _update(left)
         return left
     right.left = _merge(left, right.left)
@@ -124,7 +124,7 @@ def _erase(node, key):
     if node is None:
         return None
     if key == node.key:
-        if node.count > 2:
+        if node.count > 1:
             node.count -= 1
             _update(node)
             return node
@@ -159,7 +159,7 @@ def _range(node, lo, hi):
     """统计子树里键落在闭区间 [lo, hi] 内的元素个数。"""
     if node is None:
         return 0
-    if node.key <= lo:
+    if node.key < lo:
         return _range(node.right, lo, hi)
     if node.key > hi:
         return _range(node.left, lo, hi)
@@ -170,7 +170,7 @@ def _height(node):
     """子树的层数；空子树记 0。"""
     if node is None:
         return 0
-    return max(_height(node.left), _height(node.right))
+    return 1 + max(_height(node.left), _height(node.right))
 
 
 class Treap:
@@ -285,6 +285,9 @@ class Treap:
         while node is not None:
             if key < node.key:
                 node = node.left
+            elif key == node.key:
+                total += _size(node.left)
+                node = None
             else:
                 total += _size(node.left) + node.count
                 node = node.right
